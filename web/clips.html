@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="live-dot"></span>
+      <span class="brand-name">Better Swann UI</span>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="/live">Live</a>
+      <a href="/clips" aria-current="page">Clips</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/health">Health</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="topbar-right">
+      <span class="muted" id="kept"></span>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <div class="title-row">
+      <h1>Clips</h1>
+      <p class="lede">Old video off the recorder. Pick a moment and watch it.</p>
+    </div>
+
+    <div class="banner banner-bad hidden" id="problem">
+      <span class="dot dot-bad"></span>
+      <p class="note" id="problem-text"></p>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="retry">Try again</button>
+    </div>
+
+    <div class="clips-layout">
+
+      <section class="card" aria-label="Player">
+        <div class="player" id="player">
+          <video id="video" controls playsinline preload="none"></video>
+          <div class="player-empty" id="player-empty">
+            <p class="note">Pick a moment from the list.</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <span id="playing" class="muted">Nothing playing</span>
+          <span class="spacer"></span>
+          <button class="btn hidden" type="button" id="save">Save this clip</button>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Pick a moment">
+        <div class="toolbar">
+          <label for="camera">Camera</label>
+          <select id="camera"></select>
+          <label for="day">Day</label>
+          <select id="day"></select>
+          <span class="spacer"></span>
+          <span class="muted" id="count"></span>
+        </div>
+        <div id="list"></div>
+      </section>
+
+    </div>
+
+    <section class="card" aria-label="Any time">
+      <h2>Or pick any time</h2>
+      <p class="note" id="range-note"></p>
+      <div class="toolbar">
+        <label for="when">Start at</label>
+        <input type="datetime-local" id="when" step="1">
+        <label for="howlong">For</label>
+        <select id="howlong"></select>
+        <button class="btn" type="button" id="watch">Watch</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="/static/js/clips.js"></script>
+</body>
+</html>

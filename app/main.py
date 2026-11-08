@@ -27,6 +27,7 @@ from swann.errors import RecorderError, RecorderUnreachable
 from swann import alerts as alerts_store
 from swann import live as live_video
 from swann import names as camera_names
+from swann import playback
 from swann import users
 from swann.backup import take_backup
 from swann.health import read_health
@@ -40,6 +41,7 @@ PAGE_HEALTH = "health.html"
 PAGE_SETTINGS = "settings.html"
 PAGE_ALERTS = "alerts.html"
 PAGE_LIVE = "live.html"
+PAGE_CLIPS = "clips.html"
 ROUTE_HOME = "/"
 ROUTE_HEALTH = "/health"
 ROUTE_SETTINGS = "/settings"
@@ -63,6 +65,12 @@ API_PICTURES = "/api/live/{channel}/pictures"
 API_SNAPSHOT = "/api/live/{channel}/snapshot"
 API_VIDEO_PLAYLIST = "/api/live/{channel}/video/" + cfg.HLS_PLAYLIST
 API_VIDEO_SEGMENT = "/api/live/{channel}/video/{name}"
+ROUTE_CLIPS = "/clips"
+API_CLIPS = "/api/clips"
+API_CLIP_FILE = "/api/clips/{channel}/clip" + cfg.CLIP_SUFFIX
+CLIP_PARAM_ALERT = "alert"
+CLIP_PARAM_SAVE = "save"
+CLIP_DISPOSITION = 'attachment; filename="{name}"'
 NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate"}
 STATUS_UNREACHABLE = 503
 STATUS_BAD_REQUEST = 400
@@ -71,6 +79,7 @@ STATUS_READ_ONLY = 403
 
 session = RecorderSession()
 cameras = live_video.LiveVideo()
+clips = playback.ClipMaker()
 
 
 @asynccontextmanager
@@ -483,6 +492,104 @@ async def video_playlist_api(channel: int) -> FileResponse:
         folder / cfg.HLS_PLAYLIST,
         media_type=cfg.HLS_MEDIA_TYPE,
         headers=NO_CACHE,
+    )
+
+
+@app.get(ROUTE_CLIPS, include_in_schema=False)
+async def clips_page() -> FileResponse:
+    return _page(PAGE_CLIPS)
+
+
+@app.get(API_CLIPS)
+async def clips_api(
+    channel: int = 0,
+    day: str | None = None,
+    limit: int = cfg.ALERT_PAGE_SIZE,
+) -> dict[str, Any]:
+    """Clips you can watch, taken from the movement alerts already stored.
+
+    The recorder keeps no clip list, so the alert times are the list. Each one
+    sits inside a saved block of video, which is what the player asks for.
+    """
+    _check_channel(channel)
+    everything = alerts_store.recent(limit=cfg.ALERT_MAX_PAGE_SIZE, channel=channel)
+
+    days: dict[str, int] = {}
+    for row in everything:
+        days[row.started_at[:10]] = days.get(row.started_at[:10], 0) + 1
+
+    rows = everything
+    if day:
+        rows = [row for row in rows if row.started_at.startswith(day)]
+    rows = rows[:max(1, min(limit, cfg.ALERT_MAX_PAGE_SIZE))]
+
+    chosen = camera_names.all_names()
+    summary = alerts_store.summary()
+    return {
+        "channel": channel,
+        "cameras": [
+            {
+                "channel": camera["channel"],
+                "label": chosen.get(camera["channel"]) or camera["label"],
+                "count": camera["count"],
+            }
+            for camera in summary["cameras"]
+        ],
+        "days": [{"day": key, "count": count}
+                 for key, count in sorted(days.items(), reverse=True)],
+        "clips": [alerts_store.payload(row) for row in rows],
+        "maxSeconds": cfg.CLIP_MAX_SECONDS,
+        "defaultSeconds": cfg.CLIP_DEFAULT_SECONDS,
+    }
+
+
+@app.get(API_CLIP_FILE)
+async def clip_file_api(
+    channel: int,
+    start: str,
+    end: str | None = None,
+    alert: bool = False,
+    quality: str = cfg.CLIP_QUALITY_VIEW,
+    save: bool = False,
+) -> Response:
+    """One clip as an MP4.
+
+    Watching streams it, so it starts in about two seconds. Saving builds the
+    whole file first, because a saved file has to be seekable.
+    """
+    _check_channel(channel)
+    if quality not in cfg.CLIP_QUALITIES:
+        raise HTTPException(status_code=STATUS_BAD_REQUEST,
+                            detail=f"quality must be one of {cfg.CLIP_QUALITIES}")
+    try:
+        if alert:
+            window = playback.window_for_alert(channel, start, end)
+        else:
+            window = playback.window_for_times(channel, start, end or start)
+    except ValueError as exc:
+        raise HTTPException(status_code=STATUS_BAD_REQUEST, detail=str(exc))
+
+    try:
+        if save:
+            path = await clips.clip(window, quality)
+            return FileResponse(
+                path,
+                media_type=cfg.CLIP_MEDIA_TYPE,
+                headers={
+                    **NO_CACHE,
+                    "Content-Disposition": CLIP_DISPOSITION.format(
+                        name=window.filename(quality)
+                    ),
+                },
+            )
+        feed = await clips.stream(window, quality)
+    except playback.NoVideo as exc:
+        raise HTTPException(status_code=STATUS_NOT_FOUND, detail=str(exc))
+    except playback.ClipFailed as exc:
+        raise HTTPException(status_code=STATUS_UNREACHABLE, detail=str(exc))
+
+    return StreamingResponse(
+        feed, media_type=cfg.CLIP_MEDIA_TYPE, headers=NO_CACHE
     )
 
 

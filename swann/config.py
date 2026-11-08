@@ -463,6 +463,26 @@ def rtsp_url(channel: int, stream: int = RTSP_STREAM_MAIN) -> str:
     )
 
 
+def playback_url(channel: int, start: str, end: str) -> str:
+    """Build a playback RTSP URL. Never log the result, it holds the password.
+
+    `start` and `end` are already in PLAYBACK_TIME_FORMAT, on the recorder's
+    own clock. See the playback notes above.
+    """
+    from urllib.parse import quote
+
+    return PLAYBACK_URL_TEMPLATE.format(
+        user=RECORDER_USER,
+        password=quote(RECORDER_PASS, safe=""),
+        host=RECORDER_HOST,
+        port=RTSP_PORT,
+        channel=channel + PLAYBACK_CHANNEL_OFFSET,
+        start=start,
+        end=end,
+        stream=PLAYBACK_STREAM,
+    )
+
+
 def channel_config_name(name: str, channel: int) -> str:
     """Per-channel config names take a .[N] suffix, as in Name.[0]."""
     return CHANNEL_SUFFIX_TEMPLATE.format(name=name, channel=channel)
@@ -1124,6 +1144,90 @@ SNAPSHOT_QUALITY = 3
 LIVE_MODE_PICTURES = "pictures"
 LIVE_MODE_VIDEO = "video"
 LIVE_MODES = (LIVE_MODE_PICTURES, LIVE_MODE_VIDEO)
+
+
+# --------------------------------------------------------------------------
+# Old video (playback)
+# --------------------------------------------------------------------------
+# Read off the Swann Mac app on 2026-11-08, by capturing its own loopback.
+# Playback is plain RTSP on the same port as live video. There is no secret
+# header and no cloud. The app's /API10/ path is for settings, not video.
+#
+#   rtsp://user:pass@host:554/cam/playback
+#       ?channel=N&starttime=<time>Z&endtime=<time>Z&streamType=0
+#
+# THE TIME IS THE RECORDER'S OWN CLOCK. The trailing Z looks like UTC and is
+# not. Proof: we asked for 2026-11-07T23:23:05Z and the clock burnt into the
+# returned picture read 07/11/2026 23:22:57, which is the recorder's local
+# time. Event times come out of the recorder's log in the same clock, so
+# nothing is ever converted. Do not add a UTC step here.
+PLAYBACK_PATH = "/cam/playback"
+PLAYBACK_URL_TEMPLATE = (
+    "rtsp://{user}:{password}@{host}:{port}" + PLAYBACK_PATH
+    + "?channel={channel}&starttime={start}&endtime={end}&streamType={stream}"
+)
+PLAYBACK_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+# streamType is accepted and then ignored. Both 0 and 1 hand back the 4K main
+# stream, so the small stream is not an option here the way it is for live.
+PLAYBACK_STREAM = 0
+# Playback uses the plain channel number, with no +1 offset. Live video does
+# use an offset, so the two are not the same.
+PLAYBACK_CHANNEL_OFFSET = 0
+
+# The recorder hands back only the video it actually has in the window, and
+# rolls the start back to the nearest key frame, about 8 seconds. Recording is
+# movement triggered, so a 4 second event sits inside a longer saved block.
+# Asking wide and letting the recorder trim is the way to get the whole block.
+CLIP_PAD_BEFORE_SECONDS = 30
+CLIP_PAD_AFTER_SECONDS = 120
+# What a person may ask for by hand, so one click cannot start an hour of work.
+CLIP_MAX_SECONDS = 600
+CLIP_DEFAULT_SECONDS = 60
+
+CLIPS_DIR = DATA_DIR / "clips"
+CLIP_PART_SUFFIX = ".part"
+CLIP_SUFFIX = ".mp4"
+CLIP_MEDIA_TYPE = "video/mp4"
+# Clips are rebuilt on demand, so this folder is a cache, not a library.
+CLIP_KEEP_SECONDS = 24 * 60 * 60
+CLIP_MAKE_TIMEOUT_SECONDS = 300
+
+# Two sizes. "view" is small and quick, for watching in the page. "full" keeps
+# the recorder's own 4K, for saving.
+CLIP_QUALITY_VIEW = "view"
+CLIP_QUALITY_FULL = "full"
+CLIP_QUALITIES = (CLIP_QUALITY_VIEW, CLIP_QUALITY_FULL)
+CLIP_VIEW_HEIGHT = 720
+CLIP_VIEW_SCALE = f"scale=-2:{CLIP_VIEW_HEIGHT}"
+CLIP_VIDEO_ENCODER = "h264_videotoolbox"
+CLIP_VIDEO_BITRATE_VIEW = "2500k"
+CLIP_VIDEO_BITRATE_FULL = "12000k"
+# The cameras send G.711 a-law, which an MP4 file cannot hold. Copying the
+# audio fails with "Could not find tag for codec pcm_alaw", so it is always
+# re-encoded. 8000 Hz plays fine in a plain MP4; the 44100 rule is for HLS.
+CLIP_AUDIO_ENCODER = "aac"
+CLIP_AUDIO_BITRATE = "96k"
+# Named on purpose. The file is written as "<name>.mp4.part" so a half made
+# clip is never served, and ffmpeg cannot guess the format from that ending.
+CLIP_FORMAT = "mp4"
+CLIP_FLAGS = ("-movflags", "+faststart")
+# The recorder sends old video at normal speed, so a 40 second clip takes 40
+# seconds to arrive. Waiting for the whole file before showing anything means
+# staring at nothing. These flags make an MP4 the browser can start playing
+# while it is still being written, so it starts in about two seconds instead.
+# The cost is no seek bar past what has arrived, which is why Save still
+# builds a whole file.
+#
+# Only these two flags. This ffmpeg answers "Undefined constant" for
+# default_base_is_moof and then writes no file at all.
+CLIP_STREAM_FLAGS = ("-movflags", "frag_keyframe+empty_moov")
+CLIP_STREAM_CHUNK = 64 * 1024
+CLIP_STREAM_FIRST_BYTES_SECONDS = 30
+CLIP_NAME_TEMPLATE = "camera-{channel:02d}-{stamp}-{quality}" + CLIP_SUFFIX
+CLIP_STAMP_FORMAT = "%Y%m%d-%H%M%S"
+# What ffmpeg says when the recorder has nothing saved for that window.
+CLIP_EMPTY_MARKERS = ("Invalid data found", "Server returned 4", "404 Not Found")
+CLIP_EMPTY_MESSAGE = "There is no video saved for that time."
 
 
 # --------------------------------------------------------------------------

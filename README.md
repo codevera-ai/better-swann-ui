@@ -9,6 +9,8 @@ internet. No account, no cloud, no app store.
 
 - **Live view.** Every camera in a grid. Click one to fill the screen. Sound on
   a button. Save a still.
+- **Old video.** Pick a moment, or any time at all, and watch it. Save it as an
+  MP4. No cloud and no Swann app.
 - **Alerts.** Everything the cameras have seen, newest first. The recorder
   forgets after about two and a half days. This keeps the lot.
 - **Health.** Disk, uptime, firmware, which cameras are plugged in.
@@ -17,11 +19,17 @@ internet. No account, no cloud, no app store.
 - **Backup.** Save every recorder setting to a file before you change anything.
 - **An MCP server.** So you can ask an LLM to do all of the above.
 
-## What it does not do yet
+## About old video
 
-Old video cannot be played back. The recorder will not hand its clip list to
-anything but Swann's own app. Live video works fine. The proof is in
-`PLAN-evidence.md`, under "Step 1 spike: listing recordings".
+There is no clip list on these recorders, and you do not need one. You ask for
+a time window and the recorder hands back whatever it saved. This app lists
+every moment the cameras spotted, so you click a time instead of hunting
+through a blank timeline.
+
+Two things to expect. The recorder sends old video at normal speed, so a 40
+second clip takes 40 seconds to arrive. Watching starts in about three seconds
+anyway, because the clip plays while it downloads. Saving waits for the whole
+file, because a saved file has to be seekable.
 
 ## Will it work with my recorder?
 
@@ -134,6 +142,7 @@ swann/health.py    turns recorder replies into something readable
 swann/settings.py  the 40 settings screens, read and write
 swann/alerts.py    copies the recorder's log into SQLite, forever
 swann/live.py      ffmpeg: pictures for the grid, video with sound
+swann/playback.py  old video: any time window, as a clip you can save
 swann/users.py     accounts, with every password stripped out
 swann/backup.py    reads every setting to a file
 app/main.py        the web routes

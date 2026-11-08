@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="live-dot"></span>
+      <span class="brand-name">Better Swann UI</span>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="/live">Live</a>
+      <a href="#" aria-disabled="true">Clips</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/health">Health</a>
+      <a href="/settings" aria-current="page">Settings</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="topbar-right">
+      <button class="btn" type="button" id="backup">Back up settings</button>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <div class="banner banner-bad hidden" id="problem">
+      <span class="dot dot-bad"></span>
+      <p class="note" id="problem-text"></p>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="retry">Try again</button>
+    </div>
+
+    <div class="settings">
+
+      <nav class="side" id="side" aria-label="Settings"></nav>
+
+      <div class="stack" id="screen">
+        <div class="title-row">
+          <h1 id="screen-title">Settings</h1>
+        </div>
+        <p class="note" id="screen-note">Loading.</p>
+        <div class="stack" id="body"></div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+<script src="/static/js/settings.js"></script>
+</body>
+</html>

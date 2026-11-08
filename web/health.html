@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Health</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="live-dot"></span>
+      <span class="brand-name">Better Swann UI</span>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="/live">Live</a>
+      <a href="#" aria-disabled="true">Clips</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/health" aria-current="page">Health</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="topbar-right">
+      <span id="checked">Checking</span>
+      <span class="divider" aria-hidden="true">/</span>
+      <span class="mono" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <div class="title-row">
+      <h1>Health</h1>
+      <p class="lede">Everything the recorder will tell us about itself.</p>
+    </div>
+
+    <div class="banner banner-bad hidden" id="problem">
+      <span class="dot dot-bad"></span>
+      <p class="note" id="problem-text"></p>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="retry">Try again</button>
+    </div>
+
+    <section class="card" aria-label="Disk">
+      <div class="card-head">
+        <h2>Disk</h2>
+        <span class="muted" id="disk-state"></span>
+      </div>
+      <div class="figures">
+        <div class="figure">
+          <span class="figure-key">Used</span>
+          <span class="figure-value figure-value-big" id="disk-used">--</span>
+        </div>
+        <div class="figure">
+          <span class="figure-key">Free</span>
+          <span class="figure-value figure-value-big" id="disk-free">--</span>
+        </div>
+        <div class="figure">
+          <span class="figure-key">Size</span>
+          <span class="figure-value figure-value-big" id="disk-total">--</span>
+        </div>
+        <div class="figure">
+          <span class="figure-key">Video goes back</span>
+          <span class="figure-value figure-value-big" id="disk-kept">--</span>
+        </div>
+      </div>
+      <div class="meter">
+        <span class="meter-fill" id="disk-meter"></span>
+      </div>
+      <p class="note" id="disk-note"></p>
+      <div class="card-foot" id="disk-foot"></div>
+    </section>
+
+    <div class="columns">
+
+      <section class="card" aria-label="Cameras">
+        <div class="card-head">
+          <h2>Cameras</h2>
+          <span class="muted" id="camera-count"></span>
+        </div>
+        <div class="rows" id="camera-rows"></div>
+        <p class="note" id="camera-note"></p>
+      </section>
+
+      <section class="card" aria-label="Recorder">
+        <h2>Recorder</h2>
+        <div class="kv-list" id="recorder-facts"></div>
+      </section>
+
+    </div>
+
+  </main>
+</div>
+<script src="/static/js/health.js"></script>
+</body>
+</html>

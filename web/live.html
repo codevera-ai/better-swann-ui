@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="live-dot"></span>
+      <span class="brand-name">Better Swann UI</span>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="/live" aria-current="page">Live</a>
+      <a href="#" aria-disabled="true">Clips</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/health">Health</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="topbar-right">
+      <button class="btn" type="button" id="rename">Rename cameras</button>
+      <button class="btn" type="button" id="pause">Pause</button>
+    </div>
+  </header>
+
+  <main class="main main-wide" id="main">
+
+    <div class="banner banner-bad hidden" id="problem">
+      <span class="dot dot-bad"></span>
+      <p class="note" id="problem-text"></p>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="retry">Try again</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+  </main>
+</div>
+
+<div class="sheet hidden" id="sheet" role="dialog" aria-modal="true" aria-label="One camera">
+  <div class="sheet-bar">
+    <span class="sheet-title" id="sheet-title"></span>
+    <span class="spacer"></span>
+    <button class="btn" type="button" id="sheet-sound">Turn sound on</button>
+    <button class="btn" type="button" id="sheet-rename">Rename</button>
+    <button class="btn" type="button" id="sheet-save">Save a still</button>
+    <button class="btn" type="button" id="sheet-close">Close</button>
+  </div>
+  <div class="sheet-stage" id="sheet-stage"></div>
+  <p class="note" id="sheet-note"></p>
+</div>
+
+<script src="/static/js/live.js"></script>
+</body>
+</html>

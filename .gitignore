@@ -1,0 +1,31 @@
+# Secrets and machine specific config
+.env
+go2rtc.yaml
+
+# Local guidance, never committed
+CLAUDE.md
+
+# Data the tool writes
+data/
+media/
+snapshots/
+*.db
+*.raw
+.uvicorn.pid
+.uvicorn.log
+
+# Python
+.venv/
+.venv-mcp/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Private working material, never published
+swannapp/
+design-shots/
+PLAN.md
+BUILD-PLAN.md

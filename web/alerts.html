@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="live-dot"></span>
+      <span class="brand-name">Better Swann UI</span>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="/live">Live</a>
+      <a href="#" aria-disabled="true">Clips</a>
+      <a href="/alerts" aria-current="page">Alerts</a>
+      <a href="/health">Health</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="topbar-right">
+      <span id="checked">Loading</span>
+      <button class="btn" type="button" id="sync">Check now</button>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <div class="title-row">
+      <h1>Alerts</h1>
+      <p class="lede">Everything the cameras have seen.</p>
+    </div>
+
+    <div class="banner banner-bad hidden" id="problem">
+      <span class="dot dot-bad"></span>
+      <p class="note" id="problem-text"></p>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="retry">Try again</button>
+    </div>
+
+    <section class="card" aria-label="Totals">
+      <div class="figures" id="figures"></div>
+      <p class="note" id="span-note"></p>
+    </section>
+
+    <section class="card" aria-label="Alert list">
+      <div class="toolbar">
+        <label for="kind">Show</label>
+        <select id="kind"></select>
+        <label for="camera">From</label>
+        <select id="camera"></select>
+        <label for="limit">Newest</label>
+        <select id="limit"></select>
+        <span class="spacer"></span>
+        <span class="muted" id="count"></span>
+      </div>
+      <div id="list"></div>
+    </section>
+
+  </main>
+</div>
+<script src="/static/js/alerts.js"></script>
+</body>
+</html>

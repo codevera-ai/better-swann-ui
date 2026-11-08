@@ -1,0 +1,15 @@
+[project]
+name = "better-swann-ui"
+version = "0.1.0"
+description = "A self hosted tool for viewing and managing a Swann ADVANX recorder"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "httpx==0.28.1",
+    "aiosqlite==0.20.0",
+    "aiosmtpd==1.4.6",
+]
+
+[tool.setuptools]
+packages = ["swann", "app"]

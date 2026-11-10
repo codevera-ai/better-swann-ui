@@ -62,7 +62,7 @@ ROUTE_LIVE = "/live"
 API_CAMERAS = "/api/cameras"
 API_CAMERA_NAME = "/api/cameras/{channel}/name"
 API_PICTURES = "/api/live/{channel}/pictures"
-API_SNAPSHOT = "/api/live/{channel}/snapshot"
+API_SNAPSHOT = cfg.API_SNAPSHOT_TEMPLATE
 API_VIDEO_PLAYLIST = "/api/live/{channel}/video/" + cfg.HLS_PLAYLIST
 API_VIDEO_SEGMENT = "/api/live/{channel}/video/{name}"
 ROUTE_CLIPS = "/clips"
@@ -202,7 +202,7 @@ async def settings_page() -> FileResponse:
 @app.get(API_SETTINGS)
 async def settings_menu() -> dict[str, Any]:
     """The settings menu. Does not talk to the recorder."""
-    return {"groups": settings_engine.groups()}
+    return {"groups": settings_engine.groups(), "menuLabel": cfg.SETTINGS_MENU_LABEL}
 
 
 @app.get(API_SETTINGS_SCREEN)

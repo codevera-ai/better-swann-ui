@@ -66,11 +66,16 @@ def describe(
     name: str = "",
     path: str = "",
     channels: list[int] | None = None,
+    config: str = "",
 ) -> dict[str, Any]:
     """Describe one value, and everything inside it, as a tree of fields.
 
     `channels` trims a per socket list to the sockets that hold a camera. The
     real index stays in the path, so a write still lands on the right socket.
+
+    `config` is the recorder's name for the whole setting, such as
+    `Detect.MotionDetect`. It is only used to look the field up in the guide,
+    because the same leaf name means different things on different screens.
     """
     kind = kind_of(value)
     field: dict[str, Any] = {
@@ -82,7 +87,7 @@ def describe(
 
     if kind == KIND_GROUP:
         field["children"] = [
-            describe(child, key, _join(path, key), channels)
+            describe(child, key, _join(path, key), channels, config)
             for key, child in value.items()
         ]
         return field
@@ -104,22 +109,67 @@ def describe(
                 else str(index),
                 _join(path, str(index)),
                 channels,
+                config,
             )
             for index in wanted
         ]
         return field
 
     field["value"] = value
-    choices = cfg.FIELD_CHOICES.get(name)
-    if choices and isinstance(value, str):
-        field["kind"] = KIND_CHOICE
-        field["choices"] = list(choices)
     if kind == KIND_HEX:
         field["note"] = cfg.FIELD_HEX_NOTE
-    hint = cfg.FIELD_NOTES.get(name)
-    if hint:
-        field["note"] = hint
+    _add_guide(field, value, kind, cfg.field_guide(config, path, name))
     return field
+
+
+def _add_guide(
+    field: dict[str, Any],
+    value: Any,
+    kind: str,
+    guide: dict[str, Any],
+) -> None:
+    """Hang what we know about a field on to it: help, limits and choices.
+
+    A limit only goes on when the guide holds both ends of it, because half a
+    limit would let the page clamp a value on a guess. The two tier rule is
+    written out in `config.py`.
+    """
+    if not guide:
+        return
+    help_text = guide.get("help")
+    if help_text:
+        field["help"] = help_text
+    for key in ("unit", "source"):
+        if guide.get(key):
+            field[key] = guide[key]
+
+    choices = guide.get("choices")
+    if choices:
+        field["kind"] = KIND_CHOICE
+        field["choices"] = [
+            {"value": pair[0], "title": pair[1]} for pair in choices
+        ]
+        return
+
+    # A number with both ends known. A short run becomes a list to pick from,
+    # and a long one stays a box that says what it will take.
+    if kind != KIND_INT:
+        return
+    low, high = guide.get("min"), guide.get("max")
+    if low is None or high is None:
+        return
+    step = int(guide.get("step") or 1)
+    if step < 1 or high < low:
+        return
+    field["min"] = low
+    field["max"] = high
+    field["step"] = step
+    if (high - low) // step + 1 <= cfg.FIELD_CHOICE_LIMIT:
+        field["kind"] = KIND_CHOICE
+        field["choices"] = [
+            {"value": number, "title": str(number)}
+            for number in range(low, high + 1, step)
+        ]
 
 
 def _join(path: str, part: str) -> str:

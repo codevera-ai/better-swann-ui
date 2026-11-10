@@ -17,6 +17,7 @@ from typing import Any
 from . import config as cfg
 from .errors import RecorderError, RecorderUnreachable
 from .fields import coerce, describe, humanise, read_at, write_at
+from .limits import encoder_limits
 from .session import RecorderSession, WriteOutcome
 
 log = logging.getLogger(__name__)
@@ -52,6 +53,9 @@ class ScreenRead:
     values: list[ConfigValue] = field(default_factory=list)
     info: dict[str, Any] = field(default_factory=dict)
     ability: dict[str, Any] = field(default_factory=dict)
+    # What one camera's encoder will really accept, worked out per camera from
+    # the recorder's own ability reply. Keyed by camera number.
+    limits: dict[int, dict[str, Any]] = field(default_factory=dict)
     error: str | None = None
 
 
@@ -127,6 +131,19 @@ async def read_screen(session: RecorderSession, key: str) -> ScreenRead:
             out.ability[name] = await session.read_ability(name)
         except (RecorderError, RecorderUnreachable) as exc:
             log.info("ability %s refused on screen %s: %s", name, key, exc)
+
+    # The one screen whose limits the recorder states itself. Read per camera,
+    # because two cameras on the same recorder can allow different sizes.
+    if meta.get("limits") == cfg.LIMITS_ENCODER:
+        for channel in out.channels:
+            try:
+                reply = await session.read_config(cfg.NAME_DIGITAL_ABILITY, channel)
+            except (RecorderError, RecorderUnreachable) as exc:
+                log.info("limits refused for camera %s: %s", channel, exc)
+                continue
+            found = encoder_limits(reply)
+            if found:
+                out.limits[channel] = found
 
     return out
 
@@ -287,6 +304,8 @@ def _config_label(value: ConfigValue) -> str:
 
 def payload(screen: ScreenRead) -> dict[str, Any]:
     """Flatten a screen read into what the page needs, fields and all."""
+    meta = SCREENS_BY_KEY.get(screen.key, {})
+    editor = meta.get("editor")
     return {
         "key": screen.key,
         "title": screen.title,
@@ -296,6 +315,13 @@ def payload(screen: ScreenRead) -> dict[str, Any]:
         "action": screen.action,
         "error": screen.error,
         "channels": screen.channels,
+        # Which drawing or painting editor this screen uses, and the sizes
+        # and field names every editor needs. Both come from config.py, so
+        # the browser never keeps its own copy of a recorder number. The
+        # sizes go out on every screen, because the colour swatch in the
+        # plain field list needs them too.
+        "editor": editor,
+        "visual": cfg.visual_settings(),
         "configs": [
             {
                 "name": value.name,
@@ -307,12 +333,22 @@ def payload(screen: ScreenRead) -> dict[str, Any]:
                 "value": value.value,
                 "fields": None
                 if value.error
-                else describe(value.value, "", channels=screen.channels),
+                else describe(
+                    value.value,
+                    "",
+                    channels=screen.channels,
+                    config=value.name,
+                ),
             }
             for value in screen.values
         ],
         "info": screen.info,
         "ability": screen.ability,
+        # What each camera's encoder really accepts. The page builds its
+        # dropdowns from this, so no recorder number is written into the
+        # browser. Empty on every screen but video quality.
+        "limits": {str(channel): found for channel, found in screen.limits.items()},
+        "limitFields": cfg.ENCODE_LIMIT_FIELDS if screen.limits else None,
         # The restart and reset screen needs to know what can be put back.
         "resetAreas": list(cfg.RESET_AREAS)
         if screen.action == cfg.ACTION_DANGER

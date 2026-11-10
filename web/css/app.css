@@ -35,6 +35,14 @@
   --radius-small: 6px;
   --control: 44px;
   --gutter: 16px;
+  /* The narrowest a column of settings may be before the layout drops back
+     to one column. A wide screen then holds two or three side by side
+     instead of one row stretched across the whole window. */
+  --field-column: 500px;
+  /* The info icon beside a field name, and the panel it opens. */
+  --info-size: 18px;
+  --info-width: 320px;
+  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.55);
 
   --sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -192,6 +200,9 @@ a:hover {
 }
 
 /* -- main --------------------------------------------------------------- */
+/* Full width. The window is the limit, not a fixed measure. Anything that
+   would read badly stretched that far sets its own measure instead: a
+   paragraph caps at 62ch, and a card of settings splits into columns. */
 .main {
   flex: 1 1 auto;
   padding: var(--gap-5);
@@ -199,7 +210,6 @@ a:hover {
   flex-direction: column;
   gap: var(--gap-4);
   width: 100%;
-  max-width: 1180px;
 }
 
 .title-row {
@@ -245,6 +255,29 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: var(--gap-3);
+}
+
+/* A card of settings on a wide screen. Rather than stretch one row of label
+   and value across the whole window, it flows into as many columns as fit.
+   Headings and notes always take a whole row. */
+.card-fields {
+  display: grid;
+  /* `min(...)` matters. Without it a column keeps its 500px floor on a
+     narrow screen and the card runs off the side of a phone. */
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--field-column), 100%), 1fr));
+  column-gap: var(--gap-5);
+  row-gap: var(--gap-1);
+  align-content: start;
+}
+
+.card-fields > .card-head,
+.card-fields > .section-head,
+.card-fields > .note {
+  grid-column: 1 / -1;
+}
+
+.card-fields > .field-first {
+  grid-column: 1;
 }
 
 .card-head {
@@ -476,6 +509,19 @@ h2 {
   padding-right: var(--gap-1);
 }
 
+/* The menu fold. On a wide screen the handle is gone and the groups show
+   whatever the fold says, which overrides the browser's own rule for a shut
+   fold. The phone rule that turns this round is in the 860px block below. */
+.side-fold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-3);
+}
+
+.side-summary {
+  display: none;
+}
+
 .side-group {
   display: flex;
   flex-direction: column;
@@ -528,27 +574,37 @@ h2 {
 }
 
 /* -- field editor -------------------------------------------------------- */
-.fieldset {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-small);
-  background: var(--surface-2);
-  padding: var(--gap-3);
+/* A group inside a config is a heading, not a box. The config's own card is
+   the only surface on the page, so nothing is ever nested inside anything. */
+.section-head {
   display: flex;
-  flex-direction: column;
-  gap: var(--gap-2);
-  min-width: 0;
-}
-
-.fieldset-head {
-  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: var(--gap-2);
+  margin-top: var(--gap-3);
+  padding-bottom: var(--gap-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.section-head:first-child {
+  margin-top: 0;
+}
+
+/* One step down. Smaller, quieter, and no line, so the two levels never
+   read as the same thing. */
+.section-sub {
+  margin-top: var(--gap-2);
+  padding-bottom: 0;
+  border-bottom: 0;
   color: var(--text-2);
+  font-size: var(--size-2);
   font-weight: 500;
 }
 
-.fieldset-depth {
-  background: var(--surface);
+.section-name {
+  overflow-wrap: anywhere;
 }
 
 .field {
@@ -558,6 +614,8 @@ h2 {
   gap: var(--gap-3);
   padding: var(--gap-1) 0;
   min-width: 0;
+  /* The info panel hangs off the row, not off the 18px icon. */
+  position: relative;
 }
 
 .field-label {
@@ -578,8 +636,108 @@ h2 {
   line-height: 1.45;
 }
 
+/* Where a setting sits, for the levels too deep to get a heading. */
+.field-trail {
+  color: var(--text-3);
+  font-size: var(--size-1);
+  overflow-wrap: anywhere;
+}
+
+/* A value the recorder reports and will not take a change to. Plain text,
+   because a box you cannot type in only looks like one you can. */
+.field-flat {
+  font-family: var(--mono);
+  font-size: var(--size-2);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
 .field-changed .field-name {
   color: var(--accent);
+}
+
+/* The name and its info icon on one line, so the icon never pushes the value
+   column down or widens the row. */
+.field-title {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  min-width: 0;
+}
+
+/* The info icon: a small round letter that opens a panel under it. A fold,
+   not a hover tip, because a phone has no hover and a real pop up box blocks
+   the page. */
+.info {
+  flex: 0 0 auto;
+}
+
+.info-mark {
+  display: grid;
+  place-items: center;
+  width: var(--info-size);
+  height: var(--info-size);
+  border: 1px solid var(--line-bright);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: var(--size-1);
+  line-height: 1;
+  cursor: help;
+  user-select: none;
+  list-style: none;
+}
+
+.info-mark::-webkit-details-marker {
+  display: none;
+}
+
+.info-mark:hover,
+.info[open] > .info-mark {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.info-mark:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The panel floats, so opening one does not shove every row below it down a
+   line. It is held inside the card's width on a phone by the rule further
+   down in the narrow screen block. */
+.info-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% - var(--gap-1));
+  left: 0;
+  width: max-content;
+  /* `min()` matters here the same way it does on the card grid: a fixed
+     320px floor runs off the side of a phone. */
+  max-width: min(var(--info-width), 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
+  padding: var(--gap-3);
+  border: 1px solid var(--line-bright);
+  border-radius: var(--radius-small);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-panel);
+  color: var(--text-2);
+  font-size: var(--size-2);
+  line-height: 1.5;
+}
+
+.info-panel p {
+  margin: 0;
+}
+
+/* The last line of a panel is always where the limit came from, which is
+   quieter than the sentence that says what the setting does. */
+.info-panel p:not(:first-child) {
+  color: var(--text-3);
+  font-size: var(--size-1);
 }
 
 input[type="text"],
@@ -769,6 +927,30 @@ th.mono {
   .side {
     position: static;
     max-height: none;
+  }
+
+  /* The handle appears and the fold starts shut, so a screen is near the top
+     of the page instead of under a very tall list of links. */
+  .side-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+    min-height: 44px;
+    padding: var(--gap-2) var(--gap-3);
+    border-radius: var(--radius-small);
+    background: var(--surface-2);
+    color: var(--text);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .side-summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .side-fold:not([open]) > .side-group {
+    display: none;
   }
 
   .field {
@@ -1056,4 +1238,273 @@ th.mono {
   font: inherit;
   font-family: var(--mono);
   font-size: var(--size-2);
+}
+
+
+/* --------------------------------------------------------------------------
+   Visual settings editors. A still from the camera with boxes, shapes and
+   lines on top, a brush over a grid, and a week you drag across. Every
+   position is a percentage, so the drawing lines up at any size.
+   -------------------------------------------------------------------------- */
+
+.shot-split {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--gap-3);
+  align-items: start;
+}
+
+.shot {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--video);
+  touch-action: none;
+  user-select: none;
+}
+
+.shot-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shot-blank .shot-img {
+  visibility: hidden;
+}
+
+.shot-blank::after {
+  content: "No picture from this camera just now";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gutter);
+  color: var(--text-3);
+  font-size: var(--size-1);
+  text-align: center;
+}
+
+.shot-svg,
+.shot-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.shot-svg {
+  pointer-events: none;
+}
+
+.shot-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
+  min-width: 0;
+}
+
+/* A privacy block. Drag it anywhere, drag its corner to resize. */
+.shot-box {
+  position: absolute;
+  border: 1px solid var(--accent);
+  background: rgb(0 0 0 / 82%);
+  cursor: move;
+  touch-action: none;
+}
+
+.shot-tag {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--size-1);
+}
+
+.shot-handle {
+  position: absolute;
+  right: -11px;
+  bottom: -11px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--ground);
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.shot-handle-free {
+  right: auto;
+  bottom: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  transform: translate(-50%, -50%);
+}
+
+.shot-end {
+  color: var(--ground);
+  font-family: var(--mono);
+  font-size: var(--size-1);
+  font-weight: 600;
+}
+
+/* A draggable label, standing in for the text the recorder draws. */
+.shot-chip {
+  position: absolute;
+  padding: 2px var(--gap-1);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-small);
+  background: rgb(0 0 0 / 70%);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--size-1);
+  white-space: nowrap;
+  cursor: move;
+  touch-action: none;
+}
+
+.shot-poly,
+.shot-line {
+  fill: rgb(232 163 61 / 18%);
+  stroke: var(--accent);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.shot-line {
+  fill: none;
+  stroke-width: 4;
+}
+
+.shot-faint {
+  opacity: 40%;
+}
+
+/* The movement brush. One tappable cell per piece of the picture. */
+.brush {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--brush-cols), 1fr);
+  grid-template-rows: repeat(var(--brush-rows), 1fr);
+  touch-action: none;
+}
+
+.brush-cell {
+  border-right: 1px solid rgb(255 255 255 / 7%);
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+}
+
+.brush-on {
+  background: rgb(232 163 61 / 34%);
+}
+
+/* The week. Seven days down, half hours across, drag to paint. */
+.week {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--gap-1);
+  align-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.week-corner {
+  min-width: 30px;
+}
+
+.week-hours {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+}
+
+.week-hour {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: var(--size-1);
+}
+
+.week-day {
+  color: var(--text-2);
+  font-size: var(--size-1);
+  text-align: right;
+}
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(var(--week-slots), 1fr);
+  height: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+}
+
+.week-cell {
+  border-right: 1px solid rgb(255 255 255 / 5%);
+  background: var(--surface-2);
+}
+
+.week-cell:nth-child(4n) {
+  border-right-color: rgb(255 255 255 / 12%);
+}
+
+.week-on {
+  background: var(--accent);
+}
+
+/* Colour swatches, in place of a packed hex number. */
+.colour {
+  display: flex;
+  gap: var(--gap-2);
+  align-items: center;
+}
+
+.colour input[type="color"] {
+  width: 48px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line-bright);
+  border-radius: var(--radius-small);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.colour input[type="range"] {
+  width: 100px;
+  accent-color: var(--accent);
+}
+
+.colour-field .field {
+  padding: 0;
+  border: 0;
+}
+
+@media (max-width: 1000px) {
+  .shot-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .week-strip {
+    height: 26px;
+  }
+
+  .week-day {
+    font-size: 10px;
+  }
+
+  /* On a phone the panel takes the whole row. Measured at 390px with every
+     panel open: no sideways scroll. */
+  .info-panel {
+    width: 100%;
+  }
 }
